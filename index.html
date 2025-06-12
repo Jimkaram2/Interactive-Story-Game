@@ -1,1 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Choose Your Path: Identity Challenge</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+      color: #fff;
+      overflow-x: hidden;
+    }
+    .container {
+      max-width: 800px;
+      margin: 80px auto;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+      animation: fadeIn 1s ease-out;
+    }
+    h1 {
+      text-align: center;
+      font-size: 2.5em;
+      margin-bottom: 20px;
+    }
+    .story-text {
+      font-size: 1.2em;
+      margin-bottom: 30px;
+      line-height: 1.6;
+      opacity: 0;
+      animation: slideUp 1s forwards;
+    }
+    .choices button {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 15px;
+      font-size: 1em;
+      border: none;
+      border-radius: 8px;
+      background-color: #00bcd4;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .choices button:hover {
+      background-color: #0097a7;
+    }
+    @keyframes slideUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+    }
+    @keyframes fadeIn {
+      from {opacity: 0;} to {opacity: 1;}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Choose Your Path: Identity Challenge</h1>
+    <div id="story" class="story-text">
+      It's Friday night. You're at a house party. You've had one drink, and your friends are pressuring you to drive them to another party across town. You know it’s not a good idea... but they’re all waiting on you.
+    </div>
+    <div class="choices">
+      <button onclick="nextScene('drive')">Give in and drive anyway</button>
+      <button onclick="nextScene('refuse')">Refuse and call a cab</button>
+    </div>
+  </div>
 
+  <script>
+    function nextScene(choice) {
+      const story = document.getElementById('story');
+      const choices = document.querySelector('.choices');
+
+      if (choice === 'drive') {
+        story.innerHTML = `You start the car. The streets are dark and your vision is slightly blurred. Suddenly, a red light flashes in front of you... You've been pulled over. The officer suspects you're under the influence. Your heart sinks.`;
+        choices.innerHTML = '<button onclick="restartGame()">Start Over</button>';
+      } else if (choice === 'refuse') {
+        story.innerHTML = `You explain to your friends that it's not safe. They’re annoyed at first, but eventually agree to order a cab. You’ve just taken a huge step in making your own decisions—despite peer pressure.`;
+        choices.innerHTML = '<button onclick="restartGame()">Start Over</button>';
+      }
+    }
+
+    function restartGame() {
+      document.getElementById('story').innerHTML = `It's Friday night. You're at a house party. You've had one drink, and your friends are pressuring you to drive them to another party across town. You know it’s not a good idea... but they’re all waiting on you.`;
+      document.querySelector('.choices').innerHTML = `
+        <button onclick="nextScene('drive')">Give in and drive anyway</button>
+        <button onclick="nextScene('refuse')">Refuse and call a cab</button>
+      `;
+    }
+  </script>
+</body>
+</html>
