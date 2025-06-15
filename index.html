@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The Party Lie</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(120deg, #0f2027, #203a43, #2c5364);
+      background-size: 200% 200%;
+      animation: bgMove 60s ease infinite;
+      color: #fff;
+    }
+    @keyframes bgMove {
+      from { background-position: 0% 50%; }
+      to   { background-position: 100% 50%; }
+    }
+    .container {
+      display: flex; flex-wrap: wrap;
+      max-width: 1000px; margin: 60px auto;
+      padding: 20px; background: rgba(0,0,0,0.7);
+      border-radius: 12px; box-shadow: 0 0 20px rgba(0,255,255,0.3);
+    }
+    .gameplay {
+      flex: 1; min-width: 300px;
+      margin-right: 20px; position: relative;
+    }
+    h1 { text-align: center; font-size: 2.5em; margin-bottom: 20px; }
+    .dialogue { display: flex; align-items: flex-start; margin-bottom: 20px; }
+    .dialogue img {
+      width: 60px; height: 60px; border-radius: 50%;
+      margin-right: 10px; flex-shrink: 0;
+    }
+    .story-text {
+      font-size: 1.2em; line-height: 1.6;
+      flex: 1; animation: fadeInText 0.5s ease-out;
+    }
+    @keyframes fadeInText {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .choices button {
+      display: block; width: 100%;
+      margin: 10px 0; padding: 12px;
+      font-size: 1em; border: none; border-radius: 6px;
+      background-color: #00bcd4; color: #fff;
+      cursor: pointer; transition: background 0.3s;
+    }
+    .choices button:hover { background-color: #0097a7; }
+    .hud {
+      flex-basis: 200px; display: flex;
+      flex-direction: column; align-items: center;
+      padding-top: 20px;
+    }
+    .humanoid-img {
+      width: 120px; height: auto;
+      margin-bottom: 15px;
+      filter: drop-shadow(0 0 5px rgba(255,255,255,0.3));
+      transition: filter 0.3s;
+    }
+    .anxiety-meter {
+      width: 100%; height: 20px;
+      background-color: #555; border-radius: 10px;
+      overflow: hidden;
+    }
+    .anxiety-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(to right, red, orange);
+      transition: width 0.5s ease;
+    }
+    .anxiety-label { margin-top: 8px; font-size: 0.9em; color: #ddd; }
+    .inventory {
+      position: absolute; top: 20px; left: 20px;
+      background: rgba(0,0,0,0.5); padding: 10px;
+      border-radius: 6px; max-width: 150px;
+    }
+    .inventory h4 { margin: 0 0 5px; font-size: 1em; color: #ffc107; }
+    .inventory ul { list-style: none; padding: 0; margin: 0; font-size: 0.85em; color: #fff; }
+    .inventory li {
+      display: flex; align-items: center; margin-bottom: 4px;
+    }
+    .inventory li img { width: 16px; height: 16px; margin-right: 6px; }
+    .emoji {
+      position: absolute; font-size: 1.5em;
+      pointer-events: none; animation: floatUp 2s ease-out forwards;
+    }
+    @keyframes floatUp {
+      to { transform: translateY(-50px); opacity: 0; }
+    }
+    .credits {
+      display: none; max-width: 600px; margin: 80px auto;
+      padding: 40px; background: rgba(0,0,0,0.85);
+      border-radius: 12px; box-shadow: 0 0 30px rgba(255,215,0,0.5);
+      text-align: center;
+    }
+    .credits h2 { font-size: 2em; color: gold; margin-bottom: 20px; }
+    .credits img {
+      width: 80%; max-width: 300px;
+      border: 4px solid gold; border-radius: 12px;
+      margin-bottom: 20px;
+    }
+    .credits button {
+      margin-top: 20px; padding: 10px 20px;
+      font-size: 1em; border: none; border-radius: 6px;
+      background-color: gold; color: #000; cursor: pointer;
+      transition: background 0.3s;
+    }
+    .credits button:hover { background-color: #e6c200; }
+  </style>
+</head>
+<body>
+  <audio id="bgMusic" src="bg-music.mp3" loop></audio>
+  <audio id="sfxChoice" src="choice-sfx.mp3"></audio>
+
+  <div class="container" id="mainContent">
+    <div class="gameplay">
+      <div class="inventory">
+        <h4>Evidence</h4>
+        <ul id="inventoryList"></ul>
+      </div>
+      <h1>The Party Lie</h1>
+      <div id="dialogue" class="dialogue">
+        <img id="charPortrait" src="narrator.jpg" alt="Narrator">
+        <div id="story" class="story-text"></div>
+      </div>
+      <div class="choices"></div>
+    </div>
+    <div class="hud">
+      <img id="humanoid" src="humanoid figue.jpg" alt="Humanoid" class="humanoid-img">
+      <div class="anxiety-meter"><div id="anxietyFill" class="anxiety-fill"></div></div>
+      <div class="anxiety-label">Anxiety Meter</div>
+    </div>
+  </div>
+
+  <div class="credits" id="credits">
+    <h2>Created by Jim &amp; Matthew</h2>
+    <img src="your-credits-image.jpeg" alt="Jim and Matthew">
+    <p>Thank you for exploring our interactive journey into identity, pressure, and decision-making.</p>
+    <button onclick="restart()">Play Again</button>
+  </div>
+
+  <script>
+    const portraits = {
+      narrator: 'narrator.jpg',
+      alex: 'alex.jpeg',
+      gossiper: 'gossiper.jpg'
+    };
+    const evidenceIcons = {
+      'Shared Memories': 'screenshot-icon.jpg',
+      'Social Post':       'photo-icon.jpg',
+      'Deleted Proof':     'document-icon.png'
+    };
+    const flashbackMapping = {
+      'Shared Memories': 'flashbackMemory',
+      'Social Post':       'flashbackSocial',
+      'Deleted Proof':     'flashbackDeleted'
+    };
+    const endings = ['positiveEnd','chillEnd','neutralEnd','endNegative'];
+
+    let inventory = [];
+    let anxiety = 0;
+    let currentScene = null;
+    let prevScene = null;
+
+    const bgMusic = document.getElementById('bgMusic');
+    bgMusic.volume = 0.3;
+    bgMusic.play().catch(()=>{});
+
+    function playSFX() {
+      const sfx = document.getElementById('sfxChoice');
+      sfx.currentTime = 0;
+      sfx.play();
+    }
+
+    function updateAnxiety(delta) {
+      anxiety = Math.min(100, Math.max(0, anxiety + delta));
+      document.getElementById('anxietyFill').style.width = anxiety + '%';
+
+      const e = document.createElement('span');
+      e.className = 'emoji';
+      e.textContent = delta > 0 ? '⚠️' : '❤️';
+      document.body.appendChild(e);
+      e.style.left = (window.innerWidth/2 + (Math.random()*100-50)) + 'px';
+      e.style.top  = (window.innerHeight/2 + (Math.random()*100-50)) + 'px';
+      setTimeout(()=>e.remove(),2000);
+
+      const hum = document.getElementById('humanoid');
+      if      (anxiety < 30) hum.style.filter = 'brightness(1)';
+      else if (anxiety < 70) hum.style.filter = 'grayscale(50%)';
+      else                   hum.style.filter = 'grayscale(100%) blur(1px)';
+    }
+
+    function updateInventory(item) {
+      if (!inventory.includes(item)) {
+        inventory.push(item);
+        const li = document.createElement('li');
+        const icon = evidenceIcons[item] || 'document-icon.png';
+        li.innerHTML = `<img src="${icon}" alt> ${item}`;
+        document.getElementById('inventoryList').appendChild(li);
+      }
+    }
+
+    const storyData = {
+      start: {
+        speaker:'narrator',
+        text:"You slip through the front door of the house party, thumping bass, neon lights, laughter echoing down the hallway. A sudden hush falls as someone leans in, whispering that Alex hooked up with Sam’s partner. Your pulse quickens, it’s a lie, but already faces turn and eyes burn into you.",
+        choices:[
+          {text:"Storm over and confront the gossip immediately",next:"confront",anxiety:7},
+          {text:"Race to find Alex before the rumor spreads",next:"findAlex",anxiety:5}
+        ]
+      },
+      confront: {
+        speaker:'gossiper',
+        text:"You grab the gossiper by the arm, voice low but fierce, 'Where did you even hear this?' They snicker and shrug, then the crowd leans in. Your heart hammers, palms sweat.",
+        choices:[
+          {text:"Raise your voice and demand the truth now",next:"pressConfront",anxiety:3},
+          {text:"Step back, head spinning under their stares",next:"walkAway",anxiety:8}
+        ]
+      },
+      pressConfront: {
+        speaker:'gossiper',
+        text:"Your words ring out, a few friends glance your way uncertain. The gossiper’s smirk falters, 'Fine,' they sneer, 'but can you prove otherwise?' Tension crackles around you.",
+        choices:[
+          {text:"Call out clear facts that exonerate Alex",next:"defendAlex",anxiety:-4},
+          {text:"Mock the gossiper publicly to shame them",next:"shameGossiper",anxiety:6},
+          {text:"Lower your voice and step away, heart aching",next:"moveOn",anxiety:5}
+        ]
+      },
+      shameGossiper: {
+        speaker:'narrator',
+        text:"You launch into a biting mockery of the gossiper, crowd laughs nervously. Alex looks stunned, hurt flickers across their face.",
+        choices:[
+          {text:"Quickly apologize to Alex and defend them",next:"defendAlex",anxiety:4},
+          {text:"Ignore Alex’s reaction and walk away",next:"ignore",anxiety:10}
+        ]
+      },
+      walkAway: {
+        speaker:'narrator',
+        text:"You retreat toward the couch, each step feels like betrayal. Behind you, whispers grow louder, 'Why didn’t they defend Alex?' Cold dread seeps in.",
+        choices:[
+          {text:"Turn around and fight for Alex",next:"defendAlex",anxiety:-2},
+          {text:"Pretend it’s none of your business and leave",next:"ignore",anxiety:10}
+        ]
+      },
+      findAlex: {
+        speaker:'narrator',
+        text:"In the dim kitchen Alex’s shoulders slump, eyes glistening. They clutch a cup so hard it crinkles. 'What do I do?' they choke out, your stomach twists.",
+        choices:[
+          {text:"Stand tall and guide Alex to face the crowd",next:"addressParty",anxiety:-3},
+          {text:"Softly urge Alex to hide until morning",next:"layLow",anxiety:6}
+        ]
+      },
+      addressParty: {
+        speaker:'alex',
+        text:"Together you step into the living room, chatter hushes. Alex’s voice quavers, 'It’s not true.' The room tilts, will they believe you?",
+        choices:[
+          {text:"Shout your support, declare you’ve known Alex for years",next:"supportPublicly",anxiety:-5},
+          {text:"Let Alex speak alone while you watch",next:"staySilent",anxiety:4}
+        ]
+      },
+      layLow: {
+        speaker:'narrator',
+        text:"Alex slips into an empty bedroom, doors click shut. Outside laughter morphs into cruelty. Your chest tightens, panic rising as you hear muffled sobs.",
+        choices:[
+          {text:"Kick the door and insist Alex come out",next:"supportPublicly",anxiety:-4},
+          {text:"Step away, convinced silence is safer",next:"endNegative",anxiety:15}
+        ]
+      },
+      defendAlex: {
+        speaker:'narrator',
+        text:"You clear your throat, 'They’ve been together for years, this makes zero sense.' Inside jokes spring to mind as heads nod.",
+        evidence:"Shared Memories",
+        choices:[
+          {text:"Post a quick story on social media defending Alex",next:"socialMedia",anxiety:2},
+          {text:"Pull Alex outside, let cool air steady you both",next:"coolOff",anxiety:-6},
+          {text:"Stay and answer anyone’s questions head-on",next:"answerQuestions",anxiety:-5}
+        ]
+      },
+      socialMedia: {
+        speaker:'narrator',
+        text:"You fumble with your phone and post a story, but a typo makes it sound like Alex did it. Comments explode in confusion and mockery.",
+        evidence:"Social Post",
+        choices:[
+          {text:"Delete the post before it spreads",next:"deletePost",anxiety:8},
+          {text:"Clarify furiously in comments",next:"answerQuestions",anxiety:2}
+        ]
+      },
+      deletePost: {
+        speaker:'narrator',
+        text:"You delete the story, but screenshots circulate. Panic spikes as you watch the meter climb.",
+        evidence:"Deleted Proof",
+        choices:[
+          {text:"Apologize to Alex in person",next:"apologize",anxiety:-5},
+          {text:"Hide in the crowd hoping no one notices",next:"avoid",anxiety:12}
+        ]
+      },
+      moveOn: {
+        speaker:'narrator',
+        text:"You turn away hugging yourself. Guilt claws at your gut. Later Alex will learn you walked off, will they ever forgive you?",
+        choices:[
+          {text:"Swallow pride and apologize immediately",next:"apologize",anxiety:-3},
+          {text:"Vanish into the crowd hoping it blows over",next:"avoid",anxiety:12}
+        ]
+      },
+      supportPublicly: { speaker:'narrator', text:"You step forward voice unwavering, 'I’ve known Alex since childhood, this is a lie.' A hush then scattered apologies. Relief surges wild and bright.", choices:[{text:"Escape the party adrenaline still buzzing",next:"positiveEnd",anxiety:-8},{text:"Stay and salvage the night with Alex",next:"chillEnd",anxiety:-5}] },
+      staySilent:      { speaker:'narrator', text:"Alex’s words falter alone. You watch from shadows and feel betrayal wash over them. Hurt burns like coals in their eyes.", choices:[{text:"Step in now and confess your fear",next:"apologize",anxiety:-4},{text:"Quietly slip away unable to face them",next:"avoid",anxiety:10}] },
+      ignore:          { speaker:'narrator', text:"You fade into the background, rumors spread like wildfire. In the days that follow Alex’s texts go unanswered. Silence suffocates you.", choices:[{text:"Break the silence with an apology",next:"apologize",anxiety:-7},{text:"Keep distance and try to forget the pain",next:"endNegative",anxiety:15}] },
+      apologize:       { speaker:'narrator', text:"Your voice trembles, 'I’m sorry, I should’ve been braver.' Alex studies you, tears shining. Finally they nod. A fragile bridge forms.", choices:[{text:"Rebuild trust step by step",next:"positiveEnd",anxiety:-6},{text:"Give Alex space hoping it heals",next:"neutralEnd",anxiety:-2}] },
+      avoid:           { speaker:'narrator', text:"You vanish into the night, weeks pass, texts go unanswered. Guilt becomes a constant shadow it follows you everywhere.", choices:[{text:"Face the guilt and make amends",next:"apologize",anxiety:-5},{text:"Lock your doors and disappear from their world",next:"endNegative",anxiety:15}] },
+      answerQuestions: { speaker:'narrator', text:"You field every question clear calm and unwavering. Slowly skepticism dissolves. Alex squeezes your hand grateful.", choices:[{text:"Laugh with relief and leave together",next:"positiveEnd",anxiety:-7}] },
+      coolOff:         { speaker:'alex',    text:"Outside cool air fills your lungs. You and Alex share shaky laughs as relief washes over you.", choices:[{text:"Promise each other honesty first",next:"positiveEnd",anxiety:-6}] },
+      flashbackMemory: { speaker:'narrator', text:"Flashback: You and Alex first met in kindergarten during a school play, you both forgot your lines together, and you’ve been inseparable ever since.", choices:[{text:"Return to the party",next:"return",anxiety:0}] },
+      flashbackSocial: { speaker:'narrator', text:"Flashback: You and Alex once went viral for a silly duet video you posted late one night, and you laughed together until dawn.", choices:[{text:"Return to the party",next:"return",anxiety:0}] },
+      flashbackDeleted:{ speaker:'narrator', text:"Flashback: You remember the time you deleted your first embarrassing post but Alex saved a screenshot to tease you later.", choices:[{text:"Return to the party",next:"return",anxiety:0}] },
+      positiveEnd:     { speaker:'alex', text:"Triumph tastes sweet as you walk away side by side, you faced fear and emerged stronger.", choices:[{text:"Play Again",next:"restart"},{text:"Credits",next:"showCredits"}] },
+      chillEnd:        { speaker:'alex', text:"The party resumes laughter returns but a spark lingers between you and Alex, a shared secret of courage and loyalty.", choices:[{text:"Play Again",next:"restart"},{text:"Credits",next:"showCredits"}] },
+      neutralEnd:      { speaker:'alex', text:"Time heals slowly. You gave space and Alex understands. Things will be okay but trust must be rebuilt day by day.", choices:[{text:"Play Again",next:"restart"},{text:"Credits",next:"showCredits"}] },
+      endNegative:     { speaker:'narrator', text:"You walk away alone. The laughter behind you turns hollow. Regret gnaws at your insides, some wounds never fully close.", choices:[{text:"Play Again",next:"restart"},{text:"Credits",next:"showCredits"}] }
+    };
+
+    function renderScene(key) {
+      if (currentScene !== key) prevScene = currentScene;
+      currentScene = key;
+
+      document.getElementById('credits').style.display = 'none';
+      document.getElementById('mainContent').style.display = 'flex';
+
+      const scene = storyData[key];
+      if (!scene) return console.error("Missing scene:", key);
+
+      playSFX();
+      document.getElementById('charPortrait').src = portraits[scene.speaker] || portraits.narrator;
+      document.getElementById('story').innerText = scene.text;
+      if (scene.evidence) updateInventory(scene.evidence);
+
+      const container = document.querySelector('.choices');
+      container.innerHTML = '';
+      scene.choices.forEach(c => {
+        const btn = document.createElement('button');
+        btn.innerText = c.text;
+        btn.onclick = () => {
+          if (c.next === 'showCredits') return showCredits();
+          if (c.next === 'restart')    return restart();
+          if (c.next === 'return')     return renderScene(prevScene || 'start');
+          updateAnxiety(c.anxiety || 0);
+          renderScene(c.next);
+        };
+        container.appendChild(btn);
+      });
+
+      // show flashback buttons only on non-flashback, non-ending scenes
+      if (!key.startsWith('flashback') && !endings.includes(key)) {
+        inventory.forEach(item => {
+          const fbKey = flashbackMapping[item];
+          if (fbKey && !scene.choices.find(c => c.next === fbKey)) {
+            const fbtn = document.createElement('button');
+            fbtn.innerText = `View Flashback (${item})`;
+            fbtn.onclick = () => renderScene(fbKey);
+            container.appendChild(fbtn);
+          }
+        });
+      }
+    }
+
+    function showCredits() {
+      document.getElementById('mainContent').style.display = 'none';
+      document.getElementById('credits').style.display = 'block';
+    }
+    function restart() {
+      anxiety = 0;
+      inventory = [];
+      document.getElementById('inventoryList').innerHTML = '';
+      updateAnxiety(0);
+      renderScene('start');
+    }
+    window.onload = () => renderScene('start');
+  </script>
+</body>
+</html>
